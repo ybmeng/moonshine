@@ -1,12 +1,12 @@
 <div align="center">
 
-  # Whisky v2 (Fork) 🥃
-  *Wine but a bit stronger — now with better debugging*
+  # Moonshine 🌙
+  *Whisky's rebellious offspring — Wine for macOS, uncut*
 
   Forked from [Whisky-App/Whisky](https://github.com/Whisky-App/Whisky) (archived May 2025)
 </div>
 
-This fork keeps Whisky alive and improves it for newer macOS versions and better developer experience.
+Moonshine is a fork of Whisky that keeps it alive and improves it for newer macOS versions and better developer experience.
 
 ## System Requirements
 - CPU: Apple Silicon (M-series chips — M1/M2/M3/M4)
@@ -16,8 +16,8 @@ This fork keeps Whisky alive and improves it for newer macOS versions and better
 ## Building from Source
 
 ```bash
-git clone https://github.com/ybmeng/Whisky.git
-cd Whisky
+git clone https://github.com/ybmeng/moonshine.git
+cd moonshine
 xcodebuild -scheme Whisky -configuration Debug -arch arm64 \
   CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM=""
 ```
