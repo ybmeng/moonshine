@@ -74,31 +74,59 @@ public extension Process {
             }
 
             terminationHandler = { (process: Process) in
-                do {
-                    _ = try pipe.fileHandleForReading.readToEnd()
-                    _ = try errorPipe.fileHandleForReading.readToEnd()
-                    try fileHandle?.close()
-                } catch {
-                    Logger.wineKit.error("Error while clearing data: \(error)")
-                }
-
-                process.logTermination(name: name)
+                Self.drainPipe(pipe, as: .message, continuation: continuation, fileHandle: fileHandle)
+                Self.drainPipe(errorPipe, as: .error, continuation: continuation, fileHandle: fileHandle)
+                process.logTermination(name: name, fileHandle: fileHandle)
+                try? fileHandle?.close()
                 continuation.yield(.terminated(process))
                 continuation.finish()
             }
         }
     }
 
-    private func logTermination(name: String) {
-        if terminationStatus == 0 {
-            Logger.wineKit.info(
-                "Terminated \(name) with status code '\(self.terminationStatus, privacy: .public)'"
-            )
-        } else {
-            Logger.wineKit.warning(
-                "Terminated \(name) with status code '\(self.terminationStatus, privacy: .public)'"
-            )
+    private static func drainPipe(
+        _ pipe: Pipe,
+        as kind: PipeKind,
+        continuation: AsyncStream<ProcessOutput>.Continuation,
+        fileHandle: FileHandle?
+    ) {
+        guard let remaining = try? pipe.fileHandleForReading.readToEnd(),
+              let text = String(data: remaining, encoding: .utf8),
+              !text.isEmpty else { return }
+
+        switch kind {
+        case .message:
+            continuation.yield(.message(text))
+            Logger.wineKit.info("\(text, privacy: .public)")
+        case .error:
+            continuation.yield(.error(text))
+            Logger.wineKit.warning("\(text, privacy: .public)")
         }
+        fileHandle?.write(line: text)
+    }
+
+    private func logTermination(name: String, fileHandle: FileHandle? = nil) {
+        let reason: String
+        switch terminationReason {
+        case .exit:
+            reason = "exit"
+        case .uncaughtSignal:
+            reason = "uncaught signal (crash)"
+        @unknown default:
+            reason = "unknown"
+        }
+
+        let status = terminationStatus
+        let message = "\nProcess \(name) terminated: status=\(status), reason=\(reason)\n"
+
+        if status == 0 && terminationReason == .exit {
+            Logger.wineKit.info("Terminated \(name) with status '\(status, privacy: .public)'")
+        } else {
+            let detail = "status=\(status) reason=\(reason)"
+            Logger.wineKit.warning("Terminated \(name): \(detail, privacy: .public)")
+        }
+
+        fileHandle?.write(line: message)
     }
 
     private func logProcessInfo(name: String) {
@@ -117,6 +145,11 @@ public extension Process {
             Logger.wineKit.info("Environment: \(environment)")
         }
     }
+}
+
+private enum PipeKind {
+    case message
+    case error
 }
 
 extension FileHandle {

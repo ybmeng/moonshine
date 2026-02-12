@@ -22,8 +22,8 @@ import os.log
 public class Wine {
     /// URL to the installed `DXVK` folder
     private static let dxvkFolder: URL = WhiskyWineInstaller.libraryFolder.appending(path: "DXVK")
-    /// Path to the `wine64` binary
-    public static let wineBinary: URL = WhiskyWineInstaller.binFolder.appending(path: "wine64")
+    /// Path to the `wine` binary
+    public static let wineBinary: URL = WhiskyWineInstaller.binFolder.appending(path: "wine")
     /// Parth to the `wineserver` binary
     private static let wineserverBinary: URL = WhiskyWineInstaller.binFolder.appending(path: "wineserver")
 
@@ -47,11 +47,11 @@ public class Wine {
     /// Run a `wine` process with the given arguments and environment variables returning a stream of output
     private static func runWineProcess(
         name: String? = nil, args: [String], environment: [String: String] = [:],
-        fileHandle: FileHandle?
+        fileHandle: FileHandle?, directory: URL? = nil
     ) throws -> AsyncStream<ProcessOutput> {
         return try runProcess(
             name: name, args: args, environment: environment, executableURL: wineBinary,
-            fileHandle: fileHandle
+            directory: directory, fileHandle: fileHandle
         )
     }
 
@@ -68,7 +68,8 @@ public class Wine {
 
     /// Run a `wine` process with the given arguments and environment variables returning a stream of output
     public static func runWineProcess(
-        name: String? = nil, args: [String], bottle: Bottle, environment: [String: String] = [:]
+        name: String? = nil, args: [String], bottle: Bottle, environment: [String: String] = [:],
+        directory: URL? = nil
     ) throws -> AsyncStream<ProcessOutput> {
         let fileHandle = try makeFileHandle()
         fileHandle.writeApplicaitonInfo()
@@ -77,7 +78,7 @@ public class Wine {
         return try runWineProcess(
             name: name, args: args,
             environment: constructWineEnvironment(for: bottle, environment: environment),
-            fileHandle: fileHandle
+            fileHandle: fileHandle, directory: directory
         )
     }
 
@@ -96,7 +97,7 @@ public class Wine {
         )
     }
 
-    /// Execute a `wine start /unix {url}` command returning the output result
+    /// Execute a program directly via `wine {url}`, capturing all output including crash messages
     public static func runProgram(
         at url: URL, args: [String] = [], bottle: Bottle, environment: [String: String] = [:]
     ) async throws {
@@ -106,15 +107,16 @@ public class Wine {
 
         for await _ in try Self.runWineProcess(
             name: url.lastPathComponent,
-            args: ["start", "/unix", url.path(percentEncoded: false)] + args,
-            bottle: bottle, environment: environment
+            args: [url.path(percentEncoded: false)] + args,
+            bottle: bottle, environment: environment,
+            directory: url.deletingLastPathComponent()
         ) { }
     }
 
     public static func generateRunCommand(
         at url: URL, bottle: Bottle, args: String, environment: [String: String]
     ) -> String {
-        var wineCmd = "\(wineBinary.esc) start /unix \(url.esc) \(args)"
+        var wineCmd = "cd \(url.deletingLastPathComponent().esc) && \(wineBinary.esc) \(url.esc) \(args)"
         let env = constructWineEnvironment(for: bottle, environment: environment)
         for environment in env {
             wineCmd = "\(environment.key)=\"\(environment.value)\" " + wineCmd
@@ -126,17 +128,16 @@ public class Wine {
     public static func generateTerminalEnvironmentCommand(bottle: Bottle) -> String {
         var cmd = """
         export PATH=\"\(WhiskyWineInstaller.binFolder.path):$PATH\"
-        export WINE=\"wine64\"
-        alias wine=\"wine64\"
-        alias winecfg=\"wine64 winecfg\"
-        alias msiexec=\"wine64 msiexec\"
-        alias regedit=\"wine64 regedit\"
-        alias regsvr32=\"wine64 regsvr32\"
-        alias wineboot=\"wine64 wineboot\"
-        alias wineconsole=\"wine64 wineconsole\"
-        alias winedbg=\"wine64 winedbg\"
-        alias winefile=\"wine64 winefile\"
-        alias winepath=\"wine64 winepath\"
+        export WINE=\"wine\"
+        alias winecfg=\"wine winecfg\"
+        alias msiexec=\"wine msiexec\"
+        alias regedit=\"wine regedit\"
+        alias regsvr32=\"wine regsvr32\"
+        alias wineboot=\"wine wineboot\"
+        alias wineconsole=\"wine wineconsole\"
+        alias winedbg=\"wine winedbg\"
+        alias winefile=\"wine winefile\"
+        alias winepath=\"wine winepath\"
         """
 
         let env = constructWineEnvironment(for: bottle, environment: constructWineEnvironment(for: bottle))
@@ -231,7 +232,7 @@ public class Wine {
     ) -> [String: String] {
         var result: [String: String] = [
             "WINEPREFIX": bottle.url.path,
-            "WINEDEBUG": "fixme-all",
+            "WINEDEBUG": "fixme-all,err+all,warn+module",
             "GST_DEBUG": "1"
         ]
         bottle.settings.environmentVariables(wineEnv: &result)
