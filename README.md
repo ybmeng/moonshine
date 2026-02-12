@@ -11,6 +11,8 @@
   Forked from [Whisky-App/Whisky](https://github.com/Whisky-App/Whisky) (archived May 2025)
 </div>
 
+> ***DISCLOSURE: Built with Claude Code, not thoroughly tested.***
+
 ---
 
 Moonshine is a maintained fork of Whisky, a native SwiftUI wrapper for Wine on macOS. Run Windows games and apps on your Mac with no technical knowledge required — create bottles, configure settings, and launch programs through a clean GUI.
