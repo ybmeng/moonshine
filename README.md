@@ -105,7 +105,6 @@ Each run creates a timestamped log with full Wine output, including crash detail
 | `BottleView.swift` | File picker `allowedContentTypes` changed to `[.item]` so all files (including `.exe`) are selectable |
 | `PinCreationView.swift` | Same file picker fix for pin creation dialog |
 | `scripts/build_dmg.sh` | New script: builds Release app, creates DMG with Applications symlink |
-| `.github/workflows/Build.yml` | New CI workflow: builds DMG on release or manual trigger, uploads as release asset |
 
 ---
 

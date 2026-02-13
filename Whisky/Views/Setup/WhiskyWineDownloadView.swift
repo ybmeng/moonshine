@@ -65,7 +65,9 @@ struct WhiskyWineDownloadView: View {
         .frame(width: 400, height: 200)
         .onAppear {
             Task {
-                if let url: URL = URL(string: "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.2/wine-staging-11.2-osx64.tar.xz") {
+                let wineURL = "https://github.com/Gcenx/macOS_Wine_builds/"
+                    + "releases/download/11.2/wine-staging-11.2-osx64.tar.xz"
+                if let url: URL = URL(string: wineURL) {
                     downloadTask = URLSession(configuration: .ephemeral).downloadTask(with: url) { url, _, _ in
                         Task.detached {
                             await MainActor.run {
