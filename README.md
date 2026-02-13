@@ -37,7 +37,7 @@ Moonshine is a maintained fork of Whisky, a native SwiftUI wrapper for Wine on m
 ### Method 1: Install from DMG (recommended)
 
 1. Download `Moonshine.dmg` from the [latest release](https://github.com/ybmeng/moonshine/releases/latest)
-2. Open the DMG and drag **Whisky.app** to **Applications**
+2. Open the DMG and drag **Moonshine.app** to **Applications**
 3. Launch the app — the setup wizard will automatically:
    - Download [Wine Staging 11.2](https://github.com/Gcenx/macOS_Wine_builds/releases/tag/11.2) from Gcenx
    - Extract and install Wine into the correct directory structure
@@ -65,7 +65,7 @@ The script will:
 2. Install swiftlint via Homebrew
 3. Clone the repo (if not already in it)
 4. Build the app with `xcodebuild` (Release, ad-hoc signed)
-5. Copy `Whisky.app` to `/Applications`
+5. Copy `Moonshine.app` to `/Applications`
 6. Launch the app
 
 On first launch, the setup wizard auto-downloads Wine Staging 11.2 and applies the OpenGL patch — same as Method 1.

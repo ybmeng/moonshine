@@ -34,7 +34,7 @@ fi
 
 echo "==> Staging DMG contents..."
 mkdir -p "$STAGING_DIR"
-cp -R "$APP_PATH" "$STAGING_DIR/"
+cp -R "$APP_PATH" "$STAGING_DIR/Moonshine.app"
 ln -s /Applications "$STAGING_DIR/Applications"
 
 echo "==> Creating DMG..."
