@@ -34,7 +34,7 @@ Moonshine is a maintained fork of Whisky, a native SwiftUI wrapper for Wine on m
 
 ## Quick Start
 
-### Install from DMG (recommended)
+### Method 1: Install from DMG (recommended)
 
 1. Download `Moonshine.dmg` from the [latest release](https://github.com/ybmeng/moonshine/releases/latest)
 2. Open the DMG and drag **Whisky.app** to **Applications**
@@ -46,22 +46,29 @@ Moonshine is a maintained fork of Whisky, a native SwiftUI wrapper for Wine on m
 
 No manual Wine installation, no terminal commands, no patching required.
 
-### Build from source
+### Method 2: Build from source
+
+One command does everything — clones the repo, installs dependencies, builds the app, and launches it:
 
 ```bash
-# Prerequisites
-brew install swiftlint
-
-# Clone and build
-git clone https://github.com/ybmeng/moonshine.git
-cd moonshine
-xcodebuild -scheme Whisky -configuration Debug -arch arm64 \
-  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO DEVELOPMENT_TEAM=""
+curl -fsSL https://raw.githubusercontent.com/ybmeng/moonshine/main/scripts/build_from_source.sh | bash
 ```
 
-The built app will be at `~/Library/Developer/Xcode/DerivedData/Whisky-*/Build/Products/Debug/Whisky.app`.
+Or if you've already cloned the repo:
 
-On first launch, the app will download and set up Wine automatically (same as the DMG install).
+```bash
+./scripts/build_from_source.sh
+```
+
+The script will:
+1. Install Homebrew (if not installed)
+2. Install swiftlint via Homebrew
+3. Clone the repo (if not already in it)
+4. Build the app with `xcodebuild` (Release, ad-hoc signed)
+5. Copy `Whisky.app` to `/Applications`
+6. Launch the app
+
+On first launch, the setup wizard auto-downloads Wine Staging 11.2 and applies the OpenGL patch — same as Method 1.
 
 ### Build a DMG
 
