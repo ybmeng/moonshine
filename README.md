@@ -34,7 +34,19 @@ Moonshine is a maintained fork of Whisky, a native SwiftUI wrapper for Wine on m
 
 ## Quick Start
 
-### Install from source
+### Install from DMG (recommended)
+
+1. Download `Moonshine.dmg` from the [latest release](https://github.com/ybmeng/moonshine/releases/latest)
+2. Open the DMG and drag **Whisky.app** to **Applications**
+3. Launch the app — the setup wizard will automatically:
+   - Download [Wine Staging 11.2](https://github.com/Gcenx/macOS_Wine_builds/releases/tag/11.2) from Gcenx
+   - Extract and install Wine into the correct directory structure
+   - Apply the OpenGL 3.2+ patch to `winemac.so`
+4. Create a bottle and start running Windows programs
+
+No manual Wine installation, no terminal commands, no patching required.
+
+### Build from source
 
 ```bash
 # Prerequisites
@@ -49,15 +61,17 @@ xcodebuild -scheme Whisky -configuration Debug -arch arm64 \
 
 The built app will be at `~/Library/Developer/Xcode/DerivedData/Whisky-*/Build/Products/Debug/Whisky.app`.
 
-### Install Wine Staging 11.2
+On first launch, the app will download and set up Wine automatically (same as the DMG install).
 
-Download [Wine Staging 11.2](https://github.com/Gcenx/macOS_Wine_builds/releases/tag/11.2) from Gcenx and extract it to:
+### Build a DMG
 
+To create a distributable DMG locally:
+
+```bash
+./scripts/build_dmg.sh
 ```
-~/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/
-```
 
-Then apply the OpenGL patch (see [v2.6.0 changelog](#v260-fork--fix-opengl-32-context-creation-on-macos-binary-patch) below).
+This builds a Release configuration, stages the app with an Applications symlink, and outputs `Moonshine.dmg` in the project root.
 
 ### Logs
 
@@ -72,6 +86,28 @@ Each run creates a timestamped log with full Wine output, including crash detail
 ---
 
 ## Changelog (from upstream Whisky v2.3.5)
+
+### v2.7.0-fork — DMG distribution with auto-download Wine setup
+
+**Problem:** Setting up Moonshine required 7 manual steps — clone the repo, install swiftlint, build from source, download Wine Staging, extract it into the right directory, apply the OpenGL patch, and finally launch. Users needed developer tools and terminal knowledge just to get started.
+
+**Solution:** One-step install via DMG. On first launch, the app automatically downloads Wine Staging 11.2, sets up the correct directory structure, and applies the OpenGL patch.
+
+#### Changes
+
+| File | Change |
+|------|--------|
+| `WhiskyWineDownloadView.swift` | Download URL changed to Gcenx Wine Staging 11.2 (`wine-staging-11.2-osx64.tar.xz`) |
+| `Tar.swift` | `untar()` flag changed from `-xzf` (gzip) to `-xf` (auto-detect, supports `.tar.xz`) |
+| `WhiskyWineInstaller.swift` | After extraction, moves files from `Wine Staging.app/Contents/Resources/wine/` to `Libraries/Wine/` |
+| `WhiskyWineInstaller.swift` | Writes `WhiskyWineVersion.plist` (version 11.2.0) so `isWhiskyWineInstalled()` returns true |
+| `WhiskyWineInstaller.swift` | Auto-applies OpenGL 3.2+ patch to `winemac.so` after install |
+| `BottleView.swift` | File picker `allowedContentTypes` changed to `[.item]` so all files (including `.exe`) are selectable |
+| `PinCreationView.swift` | Same file picker fix for pin creation dialog |
+| `scripts/build_dmg.sh` | New script: builds Release app, creates DMG with Applications symlink |
+| `.github/workflows/Build.yml` | New CI workflow: builds DMG on release or manual trigger, uploads as release asset |
+
+---
 
 ### v2.4.0-fork — Fix silent crash logging
 

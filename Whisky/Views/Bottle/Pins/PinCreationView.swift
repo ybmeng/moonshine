@@ -42,9 +42,7 @@ struct PinCreationView: View {
                 ) {
                     let panel = NSOpenPanel()
                     panel.canChooseFiles = true
-                    panel.allowedContentTypes = [UTType.exe,
-                                                 UTType(exportedAs: "com.microsoft.msi-installer"),
-                                                 UTType(exportedAs: "com.microsoft.bat")]
+                    panel.allowedContentTypes = [.item]
                     panel.directoryURL = newPinURL ?? bottle.url.appending(path: "drive_c")
                     panel.canChooseDirectories = false
                     panel.allowsMultipleSelection = false

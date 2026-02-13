@@ -47,8 +47,81 @@ public class WhiskyWineInstaller {
 
             try Tar.untar(tarBall: from, toURL: applicationFolder)
             try FileManager.default.removeItem(at: from)
+
+            // Handle Gcenx tarball structure:
+            // Extracts to "Wine Staging.app/Contents/Resources/wine/{bin,lib,share}"
+            // but we need "Libraries/Wine/{bin,lib,share}"
+            let gcenxWineRoot = applicationFolder
+                .appending(path: "Wine Staging.app")
+                .appending(path: "Contents")
+                .appending(path: "Resources")
+                .appending(path: "wine")
+
+            if FileManager.default.fileExists(atPath: gcenxWineRoot.path) {
+                let wineDir = libraryFolder.appending(path: "Wine")
+                try FileManager.default.createDirectory(at: libraryFolder, withIntermediateDirectories: true)
+                try FileManager.default.moveItem(at: gcenxWineRoot, to: wineDir)
+
+                // Clean up the extracted app bundle
+                let gcenxAppBundle = applicationFolder.appending(path: "Wine Staging.app")
+                try FileManager.default.removeItem(at: gcenxAppBundle)
+            }
+
+            // Write WhiskyWineVersion.plist so isWhiskyWineInstalled() returns true
+            let versionPlist = libraryFolder
+                .appending(path: "WhiskyWineVersion")
+                .appendingPathExtension("plist")
+            let versionInfo = WhiskyWineVersion(version: SemanticVersion(11, 2, 0))
+            let encoder = PropertyListEncoder()
+            encoder.outputFormat = .xml
+            let data = try encoder.encode(versionInfo)
+            try data.write(to: versionPlist)
+
+            // Apply OpenGL patch to winemac.so
+            applyOpenGLPatch()
         } catch {
             print("Failed to install WhiskyWine: \(error)")
+        }
+    }
+
+    /// Patches winemac.so to enable OpenGL 3.2+ context creation for SDL3-based games.
+    /// Changes byte at offset 0x329fb from 0x74 (JE) to 0xEB (JMP).
+    private static func applyOpenGLPatch() {
+        let winemacPath = libraryFolder
+            .appending(path: "Wine")
+            .appending(path: "lib")
+            .appending(path: "wine")
+            .appending(path: "x86_64-unix")
+            .appending(path: "winemac.so")
+
+        guard FileManager.default.fileExists(atPath: winemacPath.path) else {
+            print("winemac.so not found, skipping OpenGL patch")
+            return
+        }
+
+        do {
+            let fileHandle = try FileHandle(forUpdating: winemacPath)
+            defer { fileHandle.closeFile() }
+
+            let patchOffset: UInt64 = 0x329fb
+            fileHandle.seek(toFileOffset: patchOffset)
+
+            guard let currentByte = fileHandle.readData(ofLength: 1).first else {
+                print("Failed to read byte at patch offset")
+                return
+            }
+
+            if currentByte == 0x74 {
+                fileHandle.seek(toFileOffset: patchOffset)
+                fileHandle.write(Data([0xEB]))
+                print("OpenGL patch applied successfully")
+            } else if currentByte == 0xEB {
+                print("OpenGL patch already applied")
+            } else {
+                print("Unexpected byte 0x\(String(currentByte, radix: 16)) at patch offset, skipping patch")
+            }
+        } catch {
+            print("Failed to apply OpenGL patch: \(error)")
         }
     }
 
